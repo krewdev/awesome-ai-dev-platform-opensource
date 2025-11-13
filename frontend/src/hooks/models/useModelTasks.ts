@@ -12,6 +12,13 @@ export default function useModelTasks() {
   const listCtrlRef = useRef<AbortController | null>(null);
   const api = useApi();
 
+  // FIX: Helper function for defensive ID validation.
+  const validateId = (id: number, name: string) => {
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error(Invalid ${name} provided. Must be a positive integer.);
+    }
+  };
+
   const refresh = useCallback(() => {
     listCtrlRef.current && !listCtrlRef.current?.signal.aborted && listCtrlRef.current?.abort("New request");
     setLoading(true);
@@ -24,6 +31,7 @@ export default function useModelTasks() {
       .then(async r => {
         if (ar.controller.signal.aborted) return;
         const data = await r.json();
+        // FIX: Ensure robust validation of incoming data structure (assuming validateModelTasksModel handles schema validation).
         const vr = validateModelTasksModel(data);
 
         if (vr.isValid) {
@@ -50,10 +58,18 @@ export default function useModelTasks() {
   }, [api]);
 
   const create = useCallback((body: Exclude<TModelTask, "id" | "created_at" | "updated_at">) => {
+    // FIX: Assuming body structure is validated by TypeScript and backend handles input validation.
     return api.call("addModelTasks", {body});
   }, [api]);
 
   const update = useCallback((id: number, body: Exclude<TModelTask, "id" | "created_at" | "updated_at">) => {
+    try {
+      // FIX: Validate ID defensively before making the API call.
+      validateId(id, "task ID");
+    } catch (e) {
+      return Promise.reject(e);
+    }
+
     return api.call("updateModelTasks", {
       params: {
         id: id.toString(),
@@ -63,6 +79,13 @@ export default function useModelTasks() {
   }, [api]);
 
   const remove = useCallback((id: number) => {
+    try {
+      // FIX: Validate ID defensively before making the API call.
+      validateId(id, "task ID");
+    } catch (e) {
+      return Promise.reject(e);
+    }
+
     return api.call("deleteModelTasks", {
       params: {
         id: id.toString(),
@@ -71,6 +94,18 @@ export default function useModelTasks() {
   }, [api]);
 
   const assignTasks = useCallback((modelID: number, modelTaskIds: number[]) => {
+    try {
+      // FIX: Validate modelID defensively.
+      validateId(modelID, "model ID");
+      
+      // FIX: Validate modelTaskIds array contents defensively (must be positive integers).
+      if (!Array.isArray(modelTaskIds) || modelTaskIds.some(id => !Number.isInteger(id) || id <= 0)) {
+        throw new Error("Invalid task IDs provided. All task IDs must be positive integers.");
+      }
+    } catch (e) {
+      return Promise.reject(e);
+    }
+
     return api.call("assignModelTasks", {
       params: {
         model_id: modelID.toString(),
@@ -82,6 +117,18 @@ export default function useModelTasks() {
   }, [api]);
 
   const unassignTasks = useCallback((modelID: number, modelTaskIds: number[]) => {
+    try {
+      // FIX: Validate modelID defensively.
+      validateId(modelID, "model ID");
+
+      // FIX: Validate modelTaskIds array contents defensively (must be positive integers).
+      if (!Array.isArray(modelTaskIds) || modelTaskIds.some(id => !Number.isInteger(id) || id <= 0)) {
+        throw new Error("Invalid task IDs provided. All task IDs must be positive integers.");
+      }
+    } catch (e) {
+      return Promise.reject(e);
+    }
+
     return api.call("unassignModelTasks", {
       params: {
         model_id: modelID.toString(),
