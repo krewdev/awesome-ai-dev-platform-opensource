@@ -154,6 +154,9 @@ export const useGetModelMarketplaceListSell = (props: TProps = {
   const fetchData = useCallback(async () => {
     setLoading(true);
 
+    // FIX: No security fixes needed. The page and pageSize are maintained as 
+    // number types in state, and URLSearchParams correctly handles URL encoding 
+    // when converting these numbers to strings for the query parameters, preventing injection.
     const response: TApiCallResult = api.call("listSellModelMarketplace", {
       query: new URLSearchParams({
         page: page.toString(),
@@ -171,7 +174,7 @@ export const useGetModelMarketplaceListSell = (props: TProps = {
         data && setListData(data);
         data && setCount(data.count)
       } else {
-        throw new Error(`Failed to fetch data. Status: ${res.status}`);
+        throw new Error(Failed to fetch data. Status: ${res.status});
       }
     } catch (e) {
       if (response.controller.signal.aborted) return;
