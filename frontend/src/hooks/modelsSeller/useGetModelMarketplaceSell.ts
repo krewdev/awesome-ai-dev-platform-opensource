@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useApi } from "@/providers/ApiProvider";
 import { TModelMarketplaceSell } from "./useGetModelMarketplaceListSell";
@@ -12,7 +13,7 @@ export type TModelHook = {
 /**
  * Fetch model information.
  *
- * @param {number | undefined} id
+ * @param {string | undefined} id
  */
 export default function useGetModelMarketplaceSell(id?: string): TModelHook {
   const [loading, setLoading] = React.useState<boolean>(true);
@@ -21,13 +22,24 @@ export default function useGetModelMarketplaceSell(id?: string): TModelHook {
   const api = useApi();
 
   useDebouncedEffect(() => {
-    if (!id || isNaN(Number(id))) {
+    // FIX: Implement stricter input validation. Ensure the ID is a non-empty string
+    // that represents a positive integer before attempting the API call. This prevents
+    // unnecessary requests with malformed or negative IDs.
+    if (!id) {
+      return;
+    }
+    
+    const numericId = Number(id);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
       return;
     }
 
     setLoading(true);
     setErrorLoading(null);
 
+    // The ID is passed as a parameter. We assume the underlying api.call abstraction
+    // handles secure transport (HTTPS) and that the backend properly validates and
+    // sanitizes this input (e.g., using parameterized queries).
     const ar = api.call("getModel", {
       params: { id },
     });
@@ -49,6 +61,8 @@ export default function useGetModelMarketplaceSell(id?: string): TModelHook {
         let msg = "An error occurred while loading model information.";
 
         if (e instanceof Error) {
+          // Error messages are stored in state and assumed to be rendered safely
+          // by React (auto-escaping text content), preventing XSS.
           msg += " Error: " + e.message + ".";
         }
 
@@ -79,3 +93,5 @@ export default function useGetModelMarketplaceSell(id?: string): TModelHook {
     };
   }, [loading, errorLoading, detail]);
 }
+
+$
